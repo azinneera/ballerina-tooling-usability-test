@@ -98,6 +98,16 @@ Your task is to implement the above services using Ballerina and to write unit t
 |-----------------|--------------------------------------------------------|-----------------------------------|
 | Checkout cart   | - Credit card number<br>- Amount<br>- Shipping Address | Order ID/Transaction failed error |
 
+##### 6. Currency Service
+
+**Description:** Converts one money amount to another currency. Uses real values fetched from the https://api.exchangeratesapi.io API
+
+**Resource Implementation:**
+
+| Resource (API)  | Request inputs (Query parameters)   | Response       |
+|-----------------|-------------------------------------|----------------|
+| Convert         | - to <br> -from                     | Converted rate |
+
  
 #### References
 
