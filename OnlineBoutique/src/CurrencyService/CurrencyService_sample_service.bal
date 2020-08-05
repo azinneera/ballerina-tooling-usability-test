@@ -1,18 +1,31 @@
 import ballerina/grpc;
 import ballerina/http;
-import ballerina/io;
 import ballerina/math;
 import ballerina/log;
+import ballerina/config;
 
-listener grpc:Listener ep = new (9090);
+listener grpc:Listener ep = new (config:getAsInt("CURRENCY_SERVICE_PORT"));
 
 http:Client clientEndpoint = new ("https://api.exchangeratesapi.io");
 
 service CurrencyService on ep {
 
-    resource function GetSupportedCurrencies(grpc:Caller caller, Empty value) {
-        // Implementation goes here.
-
+    resource function GetSupportedCurrencies(grpc:Caller caller, Empty value) returns error? {
+        http:Response|error response = clientEndpoint->get("/latest");
+        string[] currency_codes = [];
+        if (response is http:Response) {
+            json conversions = <json>response.getJsonPayload();
+            map<json> rates = <map<json>>conversions.rates;
+            foreach var [k, v] in rates.entries() {
+                currency_codes.push(k.toJsonString());
+            }
+            GetSupportedCurrenciesResponse supportedCurrenciesRes = {currency_codes: currency_codes};
+            check caller->send(supportedCurrenciesRes);
+            check caller->complete();
+            log:printInfo("Supported currencies request successful.");
+        } else {
+            error? sendError = caller->sendError(grpc:UNKNOWN, response.message());
+        }
         // You should return a GetSupportedCurrenciesResponse
     }
 
@@ -24,7 +37,6 @@ service CurrencyService on ep {
         if (response is http:Response) {
             json conversions = <json>response.getJsonPayload();
             json rates = <json>conversions.rates;
-            io:println(rates);
             float rate = <float>rates.GBP;
             int units = <int>math:floor(rate);
             float nanosAbs = (rate - math:floor(rate))*100;
