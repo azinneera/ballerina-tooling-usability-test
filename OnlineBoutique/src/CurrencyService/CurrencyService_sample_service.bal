@@ -1,6 +1,12 @@
 import ballerina/grpc;
+import ballerina/http;
+import ballerina/io;
+import ballerina/math;
+import ballerina/log;
 
 listener grpc:Listener ep = new (9090);
+
+http:Client clientEndpoint = new ("https://api.exchangeratesapi.io");
 
 service CurrencyService on ep {
 
@@ -9,12 +15,28 @@ service CurrencyService on ep {
 
         // You should return a GetSupportedCurrenciesResponse
     }
+
     resource function Convert(grpc:Caller caller, CurrencyConversionRequest value) returns error? {
-        // TODO: use https://api.exchangeratesapi.io/ for currency conversion 
-        Money money = {units: 100};
+        Money baseMoney = <Money>value.'from;
+        string context = "/latest?base=" + baseMoney.currency_code;
         
-        check caller->send(money);
-        check caller->complete();
+        http:Response|error response = clientEndpoint->get(<@untainted> context); 
+        if (response is http:Response) {
+            json conversions = <json>response.getJsonPayload();
+            json rates = <json>conversions.rates;
+            io:println(rates);
+            float rate = <float>rates.GBP;
+            int units = <int>math:floor(rate);
+            float nanosAbs = (rate - math:floor(rate))*100;
+            int nanos = <int>nanosAbs;
+            Money money = {units: units, nanos: nanos};
+           
+            check caller->send(money);
+            check caller->complete();
+            log:printInfo("Conversion request successful.");
+        } else {
+            error? sendError = caller->sendError(grpc:UNKNOWN, response.message());
+        }
     }
 }
 
