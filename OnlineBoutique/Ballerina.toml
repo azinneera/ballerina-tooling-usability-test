@@ -1,3 +1,9 @@
 [project]
 org-name= "onlineBoutique"
 version= "0.1.0"
+
+[platform]
+target = "java8"
+    [[platform.libraries]]
+    module = "CartService"
+    path = "./lib/mysql-connector-java-8.0.21.jar"

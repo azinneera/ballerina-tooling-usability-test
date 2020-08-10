@@ -1,39 +1,21 @@
-import ballerina/io;
+import ballerina/grpc;
 import ballerina/test;
 
-# Before Suite Function
+CartServiceBlockingClient blockingEp = new ("http://localhost:9090");
 
-@test:BeforeSuite
-function beforeSuiteFunc() {
-    io:println("I'm the before suite function!");
-}
+@test:Config {}
+function testAddItem() {
+    AddItemRequest addItem = {
+        user_id: "FA012345",
+        item: {
+            product_id: "PA54321",
+            quantity: 2
+        }
+    };
 
-# Before test function
+    [Empty, grpc:Headers]|error addItemRes = blockingEp->AddItem(addItem);
 
-function beforeFunc() {
-    io:println("I'm the before function!");
-}
-
-# Test function
-
-@test:Config {
-    before: "beforeFunc",
-    after: "afterFunc"
-}
-function testFunction() {
-    io:println("I'm in test function!");
-    test:assertTrue(true, msg = "Failed!");
-}
-
-# After test function
-
-function afterFunc() {
-    io:println("I'm the after function!");
-}
-
-# After Suite Function
-
-@test:AfterSuite
-function afterSuiteFunc() {
-    io:println("I'm the after suite function!");
+    if (addItemRes is error) {
+        test:assertFail(addItemRes.message());
+    }
 }
